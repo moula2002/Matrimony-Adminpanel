@@ -40,7 +40,14 @@ export default function ImageApprovalsPage() {
     fetchUsersWithPhotos();
   }, []);
 
-  const toggleApproval = async (userId, photoUrl, newStatus) => {
+  const handleApproval = async (userId, photoUrl, status) => {
+    let reason = "";
+    if (status === 'rejected') {
+      const inputReason = window.prompt("Optional: Enter a reason for rejection", "Photo does not meet verification requirements.");
+      if (inputReason === null) return; // cancelled
+      reason = inputReason || "Photo does not meet verification requirements.";
+    }
+
     try {
       const res = await fetch(`https://server.familiess.com/api/admin/photo-approvals/${userId}`, {
         method: "PUT",
@@ -48,7 +55,7 @@ export default function ImageApprovalsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },
-        body: JSON.stringify({ photoUrl, approved: newStatus }),
+        body: JSON.stringify({ photoUrl, status, reason }),
       });
 
       if (!res.ok) {
@@ -60,24 +67,17 @@ export default function ImageApprovalsPage() {
       // Update local state
       setUsers(users.map(u => {
         if (u._id === userId) {
-          const newPhotos = data.photos;
-          const pendingCount = newPhotos.filter(p => typeof p === 'string' || (p && !p.approved)).length;
-          
-          if (pendingCount === 0) {
-            return null; // Remove user if no pending photos
-          }
-          
           return {
             ...u,
             profile: {
               ...u.profile,
-              rawPhotos: newPhotos,
-              photos: newPhotos
+              rawPhotos: data.photos,
+              photos: data.photos
             }
           };
         }
         return u;
-      }).filter(Boolean));
+      }));
     } catch (err) {
       alert(err.message);
     }
@@ -114,13 +114,7 @@ export default function ImageApprovalsPage() {
               const name = user.profile?.name || `${user.profile?.firstName || ""} ${user.profile?.lastName || ""}`.trim() || "No Profile Set";
               const photos = user.profile?.rawPhotos || user.profile?.photos || [];
 
-              const pendingPhotos = photos.filter(photo => {
-                const isObject = typeof photo === 'object' && photo !== null;
-                const isApproved = isObject ? photo.approved : false;
-                return !isApproved;
-              });
-
-              if (pendingPhotos.length === 0) return null;
+              if (photos.length === 0) return null;
 
               return (
                 <div key={user._id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
@@ -129,16 +123,27 @@ export default function ImageApprovalsPage() {
                       <h3 className="font-semibold text-slate-900">{name}</h3>
                       <p className="text-xs text-slate-500">{user.uid} • {user.email || user.phone}</p>
                     </div>
-                    <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
-                      Pending
-                    </span>
                   </div>
                   <div className="p-4 flex-1">
                     <div className="grid grid-cols-2 gap-4">
-                      {pendingPhotos.map((photo, index) => {
+                      {photos.map((photo, index) => {
                         const isObject = typeof photo === 'object' && photo !== null;
                         const photoUrl = isObject ? photo.url : photo;
-                        const isApproved = isObject ? photo.approved : false; // Default to false if string (pending)
+                        
+                        // Default to approved if old string, otherwise check verificationStatus (or legacy approved)
+                        let status = "pending";
+                        let reason = "";
+                        
+                        if (isObject) {
+                          if (photo.verificationStatus) {
+                            status = photo.verificationStatus;
+                          } else if (photo.approved === true) {
+                            status = "approved";
+                          }
+                          reason = photo.rejectionReason || "";
+                        } else {
+                          status = "pending"; // By default treat raw unmapped strings as pending if any leaked
+                        }
 
                         return (
                           <div key={index} className="flex flex-col gap-2 relative group">
@@ -149,34 +154,49 @@ export default function ImageApprovalsPage() {
                               <img
                                 src={getImageUrl(photoUrl)}
                                 alt={`User photo ${index + 1}`}
-                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                className={`w-full h-full object-cover hover:scale-105 transition-transform duration-300 ${status === 'rejected' ? 'opacity-50 grayscale' : ''}`}
                               />
-                              <div className="absolute top-2 right-2">
-                                {isApproved ? (
+                              <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                                {status === 'approved' && (
                                   <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
                                     Approved
                                   </span>
-                                ) : (
+                                )}
+                                {status === 'pending' && (
                                   <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
                                     Pending
                                   </span>
                                 )}
+                                {status === 'rejected' && (
+                                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                                    Rejected
+                                  </span>
+                                )}
                               </div>
                             </div>
-                            <div className="flex justify-end gap-2 mt-2">
-                              <button
-                                onClick={() => toggleApproval(user._id, photoUrl, false)}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all bg-white text-red-600 border-red-200 hover:bg-red-50"
-                              >
-                                <X className="w-3.5 h-3.5" /> Reject
-                              </button>
-                              <button
-                                onClick={() => toggleApproval(user._id, photoUrl, true)}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600"
-                              >
-                                <Check className="w-3.5 h-3.5" /> Approve
-                              </button>
-                            </div>
+                            
+                            {status === 'rejected' && reason && (
+                              <div className="text-[10px] text-red-600 bg-red-50 p-1.5 rounded border border-red-100 text-center leading-tight">
+                                {reason}
+                              </div>
+                            )}
+
+                            {status === 'pending' && (
+                              <div className="flex justify-end gap-2 mt-1">
+                                <button
+                                  onClick={() => handleApproval(user._id, photoUrl, 'rejected')}
+                                  className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all bg-white text-red-600 border-red-200 hover:bg-red-50"
+                                >
+                                  <X className="w-3.5 h-3.5" /> Reject
+                                </button>
+                                <button
+                                  onClick={() => handleApproval(user._id, photoUrl, 'approved')}
+                                  className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600"
+                                >
+                                  <Check className="w-3.5 h-3.5" /> Approve
+                                </button>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
