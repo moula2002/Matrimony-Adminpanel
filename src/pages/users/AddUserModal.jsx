@@ -173,7 +173,11 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded, editingUser
       setFormData({
         ...initialState,
         ...editingUser,
-        profile: { ...initialState.profile, ...(editingUser.profile || {}) },
+        profile: { 
+          ...initialState.profile, 
+          ...(editingUser.profile || {}),
+          dob: editingUser.profile?.dob ? new Date(editingUser.profile.dob).toISOString().split('T')[0] : ''
+        },
         preferences: {
           ...initialState.preferences,
           ...(editingUser.preferences || {}),
