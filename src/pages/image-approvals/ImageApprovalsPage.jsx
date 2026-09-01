@@ -61,8 +61,7 @@ export default function ImageApprovalsPage() {
       setUsers(users.map(u => {
         if (u._id === userId) {
           const newPhotos = data.photos;
-          // String photos are already approved URLs, so we only count unapproved objects
-          const pendingCount = newPhotos.filter(p => typeof p === 'object' && p !== null && !p.approved).length;
+          const pendingCount = newPhotos.filter(p => typeof p === 'string' || (p && !p.approved)).length;
           
           if (pendingCount === 0) {
             return null; // Remove user if no pending photos
@@ -117,9 +116,8 @@ export default function ImageApprovalsPage() {
 
               const pendingPhotos = photos.filter(photo => {
                 const isObject = typeof photo === 'object' && photo !== null;
-                // If the photo is a string, it is an already approved photo URL, so it's not pending.
-                if (!isObject) return false;
-                return !photo.approved;
+                const isApproved = isObject ? photo.approved : false;
+                return !isApproved;
               });
 
               if (pendingPhotos.length === 0) return null;
