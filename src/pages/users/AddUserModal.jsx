@@ -509,10 +509,11 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded, editingUser
                   <label className={labelClasses}>Sub Community (Caste)</label>
                   <select name="caste" value={formData.profile.caste} onChange={(e) => handleChange(e, 'profile')} className={inputClasses}>
                     <option value="">Select</option>
-                    {(formData.profile.religion
-                      ? (communitiesData.subcommunities[formData.profile.religion] || [])
-                      : Object.values(communitiesData.subcommunities).flat()
-                    ).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    {Array.from(new Set(
+                      formData.profile.religion
+                        ? (communitiesData.subcommunities[formData.profile.religion] || [])
+                        : Object.values(communitiesData.subcommunities).flat()
+                    )).map((opt, idx) => <option key={`${opt}-${idx}`} value={opt}>{opt}</option>)}
                   </select>
                 </div>
                 <div>
@@ -644,7 +645,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded, editingUser
                       formData.preferences.religion && formData.preferences.religion.length > 0
                         ? (Array.isArray(formData.preferences.religion) ? formData.preferences.religion : [formData.preferences.religion]).flatMap(r => communitiesData.subcommunities[r] || [])
                         : Object.values(communitiesData.subcommunities).flat()
-                    )).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    )).map((opt, idx) => <option key={`${opt}-${idx}`} value={opt}>{opt}</option>)}
                   </select>
                 </div>
                 <div>

@@ -113,7 +113,7 @@ export default function ImageApprovalsPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1600px] mx-auto">
           {users.length === 0 ? (
             <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-dashed border-slate-300">
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
@@ -131,24 +131,29 @@ export default function ImageApprovalsPage() {
 
               return (
                 <div key={user._id} className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-200/60 flex flex-col w-full overflow-hidden">
-                  <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
+                  <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-slate-800 text-lg truncate" title={name}>{name}</h3>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">{user.uid}</span>
-                        <span className="text-xs text-slate-400 truncate" title={user.email || user.phone}>{user.email || user.phone}</span>
+                      <h3 className="font-semibold text-slate-800 text-xl truncate" title={name}>{name}</h3>
+                      <div className="flex flex-wrap items-center gap-3 mt-2">
+                        <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md shrink-0">{user.uid}</span>
+                        <span className="text-sm text-slate-500 truncate" title={user.email || user.phone}>{user.email || user.phone}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="p-4 flex-1 bg-white">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-6 flex-1 bg-white">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       {photos.map((photo, index) => {
                         const isObject = typeof photo === 'object' && photo !== null;
                         const photoUrl = isObject ? photo.url : photo;
                         
+                        // Defensive check: skip rendering if URL is corrupted or missing
+                        if (!photoUrl || typeof photoUrl !== 'string' || photoUrl === '[object Object]') {
+                           return null; 
+                        }
+
                         let status = "pending";
                         let reason = "";
-                        
+
                         if (isObject) {
                           if (photo.verificationStatus) {
                             status = photo.verificationStatus;
@@ -162,7 +167,7 @@ export default function ImageApprovalsPage() {
 
                         return (
                           <div key={index} className="flex flex-col gap-3 group relative w-full">
-                            <div 
+                            <div
                               className="aspect-[4/5] bg-slate-50 rounded-xl overflow-hidden border border-slate-200 relative cursor-pointer ring-2 ring-transparent transition-all duration-300 hover:ring-indigo-500/30 w-full"
                               onClick={() => setSelectedImage(getImageUrl(photoUrl))}
                             >
@@ -173,7 +178,7 @@ export default function ImageApprovalsPage() {
                                 loading="lazy"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                              
+
                               <div className="absolute top-2 right-2 z-10">
                                 {status === 'approved' && (
                                   <span className="inline-flex items-center gap-1 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
@@ -192,7 +197,7 @@ export default function ImageApprovalsPage() {
                                 )}
                               </div>
                             </div>
-                            
+
                             {status === 'rejected' && reason && (
                               <div className="text-[11px] text-red-600 bg-red-50/50 p-2 rounded-lg border border-red-100/50 text-center leading-snug">
                                 <span className="font-semibold block mb-0.5">Reason:</span>
@@ -229,7 +234,7 @@ export default function ImageApprovalsPage() {
       )}
 
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/95 backdrop-blur-md transition-opacity"
           onClick={() => setSelectedImage(null)}
         >
@@ -240,9 +245,9 @@ export default function ImageApprovalsPage() {
             >
               <X className="w-8 h-8" />
             </button>
-            <img 
-              src={selectedImage} 
-              alt="Detailed user photo view" 
+            <img
+              src={selectedImage}
+              alt="Detailed user photo view"
               className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl ring-1 ring-white/10"
             />
           </div>
