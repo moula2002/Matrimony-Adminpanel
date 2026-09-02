@@ -14,7 +14,7 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import ImageApprovalsPage from "./pages/image-approvals/ImageApprovalsPage";
 import BioApprovalsPage from "./pages/bio-approvals/BioApprovalsPage";
 import BannerPage from "./pages/banner/BannerPage";
-
+import ReferralsPage from "./pages/referrals/ReferralsPage";
 
 function App() {
   return (
@@ -39,6 +39,7 @@ function App() {
           <Route path="/active-subscriptions" element={<ActiveSubscriptionsPage />} />
           <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/banner" element={<BannerPage />} />
+          <Route path="/referrals" element={<ReferralsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>

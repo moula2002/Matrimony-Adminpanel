@@ -15,7 +15,8 @@ import {
   Wallet,
   Settings,
   Image,
-  Layers
+  Layers,
+  Gift
 } from "lucide-react";
 import logo from "../assets/logo.png";
 
@@ -55,6 +56,7 @@ export default function Sidebar() {
     { name: "Subscription Plans", href: "/subscriptions", icon: CreditCard },
     { name: "Active Subscriptions", href: "/active-subscriptions", icon: BadgePercent },
     { name: "Payments", href: "/payments", icon: Wallet },
+    { name: "Referrals", href: "/referrals", icon: Gift },
     // { name: "Content Manager", href: "/content", icon: FileText },
     // { name: "Revenue & Coupons", href: "/revenue", icon: BarChart3 },
     { name: "Banners", href: "/banner", icon: Layers },
