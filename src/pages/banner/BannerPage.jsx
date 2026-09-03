@@ -56,11 +56,8 @@ export default function BannerPage() {
       const uploadData = await uploadRes.json();
 
       // 2. Create banner record with the uploaded image URL and link
-      let url = uploadData.urls && uploadData.urls.length > 0 ? uploadData.urls[0] : null;
+      const url = uploadData.urls && uploadData.urls.length > 0 ? uploadData.urls[0] : null;
       if (url) {
-        if (url.startsWith('/')) {
-          url = `https://srv1824-files.hstgr.io/ba33b6d7c167370b/files/domains/server.familiess.com${url}`;
-        }
         const createRes = await fetch(`${baseUrl}/api/admin/banners`, {
           method: "POST",
           headers: {
@@ -147,11 +144,7 @@ export default function BannerPage() {
         const uploadData = await uploadRes.json();
         
         if (uploadData.urls && uploadData.urls.length > 0) {
-          let newUrl = uploadData.urls[0];
-          if (newUrl.startsWith('/')) {
-            newUrl = `https://srv1824-files.hstgr.io/ba33b6d7c167370b/files/domains/server.familiess.com${newUrl}`;
-          }
-          finalImageUrl = newUrl;
+          finalImageUrl = uploadData.urls[0];
         }
       }
 
@@ -185,7 +178,7 @@ export default function BannerPage() {
   const getFullImageUrl = (url) => {
     if (!url) return "";
     if (url.startsWith("http")) return url;
-    return `https://srv1824-files.hstgr.io/ba33b6d7c167370b/files/domains/server.familiess.com${url}`;
+    return `${baseUrl}${url}`;
   };
 
   return (
