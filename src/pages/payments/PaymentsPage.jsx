@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Clock, AlertCircle, Calendar } from "lucide-react";
-
+import PendingPaymentsPopup from "../../components/PendingPaymentsPopup";
 export default function PaymentsPage() {
   const [payments, setPayments] = useState([]);
   const [users, setUsers] = useState({});
@@ -317,6 +317,9 @@ export default function PaymentsPage() {
           </table>
         </div>
       </div>
+      
+      {/* Pending payments pop-up for this page only */}
+      <PendingPaymentsPopup />
     </div>
   );
 }
