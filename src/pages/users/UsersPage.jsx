@@ -11,10 +11,12 @@ import {
   Filter,
   UserPlus,
   Edit,
-  PhoneCall
+  PhoneCall,
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
 import AddUserModal from "./AddUserModal";
-import { getImageUrl } from "../../utils/api";
+import { apiFetch, getAuthHeaders, getImageUrl } from "../../utils/api";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -28,6 +30,11 @@ export default function UsersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
+  // Deletion modal and feedback states
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
   const getProfilePhoto = (user) => {
     const photos = user.profile?.rawPhotos || user.profile?.photos;
     if (!photos || photos.length === 0) return null;
@@ -37,19 +44,19 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch("https://server.familiess.com/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      setLoading(true);
+      setError("");
+      const res = await apiFetch("/admin/users", {
+        headers: getAuthHeaders(),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to load users list");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to load users list");
       }
 
       const data = await res.json();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "An error occurred");
     } finally {
@@ -63,47 +70,54 @@ export default function UsersPage() {
 
   const toggleVerification = async (userId, currentStatus) => {
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch(`https://server.familiess.com/api/admin/users/${userId}`, {
+      const res = await apiFetch(`/admin/users/${userId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ isVerified: !currentStatus }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to update verification status");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to update verification status");
       }
 
       setUsers(users.map(u => u._id === userId ? { ...u, isVerified: !currentStatus } : u));
+      if (viewUser && viewUser._id === userId) {
+        setViewUser((prev) => ({ ...prev, isVerified: !currentStatus }));
+      }
     } catch (err) {
-      alert(err.message);
+      alert(err.message || "Failed to update verification status");
     }
   };
 
-  const deleteUser = async (userId) => {
-    if (!confirm("Are you sure you want to delete this user and all their chats/interests? This cannot be undone.")) {
-      return;
-    }
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
 
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch(`https://server.familiess.com/api/admin/users/${userId}`, {
+      setDeleting(true);
+      const res = await apiFetch(`/admin/users/${userToDelete._id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to delete user");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to delete user");
       }
 
-      setUsers(users.filter(u => u._id !== userId));
+      setUsers((prev) => prev.filter((u) => u._id !== userToDelete._id));
+      if (viewUser && viewUser._id === userToDelete._id) {
+        setViewUser(null);
+      }
+
+      const deletedName = userToDelete.profile?.name || userToDelete.email || "User";
+      setUserToDelete(null);
+      setToastMessage({ type: "success", text: `${deletedName} and all associated data deleted successfully.` });
+      setTimeout(() => setToastMessage(null), 4000);
     } catch (err) {
-      alert(err.message);
+      alert(err.message || "An error occurred while deleting user");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -112,12 +126,16 @@ export default function UsersPage() {
     const isTabMatch = activeTab === "admins" ? user.role === "admin" : user.role !== "admin";
     if (!isTabMatch) return false;
 
-    const name = user.profile?.name || `${user.profile?.firstName || ""} ${user.profile?.lastName || ""}`.trim() || "No Name";
+    const name = user.profile?.name || `${user.profile?.firstName || ""} ${user.profile?.lastName || ""}`.trim() || user.name || "";
     const email = user.email || "";
     const phone = user.phone || "";
-    const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) ||
-      email.toLowerCase().includes(search.toLowerCase()) ||
-      phone.includes(search);
+    const uid = user.uid || "";
+    const q = search.toLowerCase().trim();
+    const matchesSearch = !q ||
+      name.toLowerCase().includes(q) ||
+      email.toLowerCase().includes(q) ||
+      phone.includes(q) ||
+      uid.toLowerCase().includes(q);
 
     const isPremium = user.premiumMembership?.isPremium || false;
     const matchesFilter = filterPremium === "all" ||
@@ -130,9 +148,7 @@ export default function UsersPage() {
     
     if (filterInactive && !isInactive) return false;
 
-    // Hardcode filter: Only show users whose onboarding is complete (ignore for admins)
-    if (user.role === 'user' && !user.profile?.is_onboarding_complete) return false;
-
+    // Show all registered users without excluding incomplete onboarding
     return matchesSearch && matchesFilter;
   });
 
@@ -244,30 +260,68 @@ export default function UsersPage() {
                 </tr>
               ) : (
                 filteredUsers.map((user) => {
-                  const name = user.profile?.name || `${user.profile?.firstName || ""} ${user.profile?.lastName || ""}`.trim() || "No Profile Set";
+                  const name = user.profile?.name || `${user.profile?.firstName || ""} ${user.profile?.lastName || ""}`.trim() || user.name || (user.email ? user.email.split("@")[0] : null) || `User ${user.uid || (user._id ? user._id.slice(-6).toUpperCase() : "")}`;
                   const isPremium = user.premiumMembership?.isPremium || false;
+                  const profilePhoto = getProfilePhoto(user);
                   return (
                     <tr key={user._id} className="hover:bg-purple-50 cursor-pointer transition-colors group" onClick={() => setViewUser(user)}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col font-medium text-slate-900">{name}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{user.email || user.phone}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          {user.role === "admin" && (
-                            <span className="inline-flex items-center rounded-md bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600 border border-purple-500/20">
-                              Admin
-                            </span>
-                          )}
-                          {user.settings?.isHidden && (
-                            <span className="inline-flex items-center rounded-md bg-slate-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 border border-slate-500/20">
-                              Hidden Profile
-                            </span>
-                          )}
-                          {(user.lastActive && new Date(user.lastActive) < new Date(Date.now() - 60*24*60*60*1000)) && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600 border border-orange-500/20">
-                              <PhoneCall className="w-3 h-3" />
-                              Needs Call
-                            </span>
-                          )}
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm shadow-xs">
+                            {profilePhoto ? (
+                              <img
+                                src={getImageUrl(profilePhoto)}
+                                alt={name}
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8b5cf6&color=fff`;
+                                }}
+                              />
+                            ) : (
+                              <span>{name[0]?.toUpperCase() || "U"}</span>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-900 flex items-center gap-2">
+                              {name}
+                              {user.uid && (
+                                <span className="font-mono text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">
+                                  {user.uid}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5">{user.email || user.phone || "No email"}</div>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              {user.role === "admin" && (
+                                <span className="inline-flex items-center rounded-md bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600 border border-purple-500/20">
+                                  Admin
+                                </span>
+                              )}
+                              {user.settings?.isHidden && (
+                                <span className="inline-flex items-center rounded-md bg-slate-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 border border-slate-500/20">
+                                  Hidden Profile
+                                </span>
+                              )}
+                              {user.role !== "admin" && (
+                                user.profile?.is_onboarding_complete ? (
+                                  <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-500/20">
+                                    Profile Complete
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-500/20">
+                                    Onboarding Incomplete
+                                  </span>
+                                )
+                              )}
+                              {(user.lastActive && new Date(user.lastActive) < new Date(Date.now() - 60*24*60*60*1000)) && (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600 border border-orange-500/20">
+                                  <PhoneCall className="w-3 h-3" />
+                                  Needs Call
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -328,9 +382,12 @@ export default function UsersPage() {
                             {user.isVerified ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           </button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); deleteUser(user._id); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setUserToDelete(user);
+                            }}
                             title="Delete User"
-                            className="p-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 transition-all"
+                            className="p-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500 transition-all"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -355,12 +412,22 @@ export default function UsersPage() {
                 <h2 className="text-lg font-bold text-slate-900">User Details</h2>
                 <p className="text-xs text-slate-500">{viewUser.uid}</p>
               </div>
-              <button
-                onClick={() => setViewUser(null)}
-                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setUserToDelete(viewUser)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500 text-xs font-semibold transition-all"
+                  title="Delete User"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete User</span>
+                </button>
+                <button
+                  onClick={() => setViewUser(null)}
+                  className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             <div className="p-4 sm:p-8">
@@ -385,8 +452,12 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <div className="flex-1 text-center md:text-left flex flex-col justify-center">
-                  <h3 className="text-3xl font-bold text-slate-900 mb-2">{viewUser.profile?.name || "N/A"}</h3>
-                  <p className="text-slate-500 text-sm mb-4">{viewUser.uid} • {viewUser.profile?.gender || "N/A"} • {viewUser.email}</p>
+                  <h3 className="text-3xl font-bold text-slate-900 mb-2">
+                    {viewUser.profile?.name || viewUser.name || (viewUser.email ? viewUser.email.split("@")[0] : "Registered User")}
+                  </h3>
+                  <p className="text-slate-500 text-sm mb-4">
+                    {viewUser.uid || (viewUser._id ? viewUser._id.slice(-6).toUpperCase() : "N/A")} • {viewUser.profile?.gender || "Gender not specified"} • {viewUser.email || "No email"}
+                  </p>
                   <div className="flex flex-wrap gap-2 justify-center md:justify-start text-sm">
                     {viewUser.profile?.age && <span className="bg-slate-100 px-3 py-1.5 rounded-md text-slate-700">{viewUser.profile.age} yrs</span>}
                     {viewUser.profile?.height && <span className="bg-slate-100 px-3 py-1.5 rounded-md text-slate-700">{viewUser.profile.height}</span>}
@@ -510,6 +581,112 @@ export default function UsersPage() {
           }
         }}
       />
+
+      {/* Delete Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => !deleting && setUserToDelete(null)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Delete User Account?
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-sm overflow-hidden flex-shrink-0">
+                    {getProfilePhoto(userToDelete) ? (
+                      <img
+                        src={getImageUrl(getProfilePhoto(userToDelete))}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userToDelete.profile?.name || userToDelete.email || 'U')}&background=random`;
+                        }}
+                      />
+                    ) : (
+                      (userToDelete.profile?.name || userToDelete.email || "U")[0].toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-900 truncate">
+                      {userToDelete.profile?.name || userToDelete.name || userToDelete.email || "User"}
+                    </p>
+                    <p className="text-xs text-slate-500 truncate">
+                      {userToDelete.uid ? `UID: ${userToDelete.uid} • ` : ""}{userToDelete.email || userToDelete.phone || "No contact info"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="mt-4 text-xs text-slate-600 leading-relaxed">
+                Deleting this account will permanently remove the profile, photos, chat messages, partner preferences, and subscription records from the database.
+              </p>
+
+              <div className="mt-6 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setUserToDelete(null)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={handleConfirmDelete}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-xl shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      <span>Delete Permanently</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[80] flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900 text-white shadow-xl animate-in fade-in slide-in-from-bottom-5 duration-300">
+          {toastMessage.type === "success" ? (
+            <CheckCircle2 className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+          ) : (
+            <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
+          )}
+          <span className="text-sm font-medium">{toastMessage.text}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-slate-400 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </>
   );
 }

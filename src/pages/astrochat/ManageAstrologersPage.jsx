@@ -55,6 +55,42 @@ const PRESET_LANGUAGES = [
   "Gujarati"
 ];
 
+// Robust array parser to handle arrays, JSON strings, comma-separated strings, and fallbacks
+export const ensureArray = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+    if (val.includes(",")) {
+      return val.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    const trimmed = val.trim();
+    return trimmed ? [trimmed] : [];
+  }
+  return [];
+};
+
+const getSpecializations = (astrologer) => {
+  if (!astrologer) return [];
+  const list = ensureArray(astrologer.specializations);
+  if (list.length > 0) return list;
+  return ensureArray(astrologer.specialties);
+};
+
+const getLanguages = (astrologer) => {
+  if (!astrologer) return [];
+  return ensureArray(astrologer.languages);
+};
+
+const getMethods = (astrologer) => {
+  if (!astrologer) return ["chat"];
+  const list = ensureArray(astrologer.supportedMethods);
+  return list.length > 0 ? list : ["chat"];
+};
+
 export default function ManageAstrologersPage() {
   const navigate = useNavigate();
   const [astrologers, setAstrologers] = useState([]);
@@ -182,17 +218,17 @@ export default function ManageAstrologersPage() {
   const openEditModal = (astrologer) => {
     setEditingAstrologer(astrologer);
     setEditName(astrologer.name || "");
-    setEditDescription(astrologer.description || "");
-    setEditBiography(astrologer.biography || "");
+    setEditDescription(astrologer.description || astrologer.about || "");
+    setEditBiography(astrologer.biography || astrologer.about || "");
     setEditExperienceYears(String(astrologer.experienceYears || 0));
-    setEditConsultationFee(String(astrologer.consultationFee || 0));
-    setEditSpecializations(astrologer.specializations || []);
-    setEditLanguages(astrologer.languages || []);
-    setEditMethods(astrologer.supportedMethods || ["chat"]);
+    setEditConsultationFee(String(astrologer.consultationFee ?? astrologer.pricePerMinute ?? 0));
+    setEditSpecializations(getSpecializations(astrologer));
+    setEditLanguages(getLanguages(astrologer));
+    setEditMethods(getMethods(astrologer));
     setEditAvailability(astrologer.availability?.status || "online");
     setEditIsPublished(astrologer.isPublished || false);
     setEditNewPhotoFile(null);
-    setEditPhotoPreview(astrologer.photo ? getImageUrl(astrologer.photo) : null);
+    setEditPhotoPreview(astrologer.photo || astrologer.photoUrl ? getImageUrl(astrologer.photo || astrologer.photoUrl) : null);
     setEditFormError("");
   };
 
@@ -408,10 +444,12 @@ export default function ManageAstrologersPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {astrologers.map((astrologer) => {
-            const photoUrl = getImageUrl(astrologer.photo);
+            const photoUrl = getImageUrl(astrologer.photo || astrologer.photoUrl);
             const isOnline = astrologer.availability?.status === "online";
             const isBusy = astrologer.availability?.status === "busy";
             const isToggling = togglingId === astrologer._id;
+            const specs = getSpecializations(astrologer);
+            const methods = getMethods(astrologer);
 
             return (
               <div
@@ -476,7 +514,7 @@ export default function ManageAstrologersPage() {
                   <div className="mt-4">
                     <h3 className="text-lg font-bold text-slate-900 line-clamp-1">{astrologer.name}</h3>
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                      {astrologer.description}
+                      {astrologer.description || astrologer.about || ""}
                     </p>
                   </div>
 
@@ -484,21 +522,23 @@ export default function ManageAstrologersPage() {
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                     <div>
                       <span className="text-slate-400">Rate:</span>{" "}
-                      <strong className="text-purple-700 text-sm font-black">₹{astrologer.consultationFee}</strong>
+                      <strong className="text-purple-700 text-sm font-black">
+                        ₹{astrologer.consultationFee ?? astrologer.pricePerMinute ?? 0}
+                      </strong>
                     </div>
 
                     <div className="flex items-center gap-1.5 text-slate-600">
-                      {astrologer.supportedMethods?.includes("chat") && (
+                      {methods.includes("chat") && (
                         <span className="p-1 bg-purple-50 text-purple-700 rounded" title="Chat Supported">
                           <MessageSquare className="h-3.5 w-3.5" />
                         </span>
                       )}
-                      {astrologer.supportedMethods?.includes("call") && (
+                      {methods.includes("call") && (
                         <span className="p-1 bg-blue-50 text-blue-700 rounded" title="Audio Call Supported">
                           <Phone className="h-3.5 w-3.5" />
                         </span>
                       )}
-                      {astrologer.supportedMethods?.includes("video") && (
+                      {methods.includes("video") && (
                         <span className="p-1 bg-rose-50 text-rose-700 rounded" title="Video Call Supported">
                           <Video className="h-3.5 w-3.5" />
                         </span>
@@ -508,14 +548,14 @@ export default function ManageAstrologersPage() {
 
                   {/* Specializations & Languages Tags */}
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {(astrologer.specializations || []).slice(0, 3).map((spec, i) => (
+                    {specs.slice(0, 3).map((spec, i) => (
                       <span key={i} className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">
                         {spec}
                       </span>
                     ))}
-                    {(astrologer.specializations || []).length > 3 && (
+                    {specs.length > 3 && (
                       <span className="text-[10px] text-slate-400 font-semibold px-1 py-0.5">
-                        +{(astrologer.specializations || []).length - 3} more
+                        +{specs.length - 3} more
                       </span>
                     )}
                   </div>
@@ -627,7 +667,7 @@ export default function ManageAstrologersPage() {
             <div className="overflow-y-auto p-6 space-y-6">
               <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <img
-                  src={getImageUrl(viewingAstrologer.photo)}
+                  src={getImageUrl(viewingAstrologer.photo || viewingAstrologer.photoUrl)}
                   alt={viewingAstrologer.name}
                   className="h-28 w-28 rounded-2xl object-cover border-2 border-white shadow-md shrink-0"
                   onError={(e) => {
@@ -646,11 +686,11 @@ export default function ManageAstrologersPage() {
                       {viewingAstrologer.isPublished ? "Published" : "Unpublished"}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 italic">"{viewingAstrologer.description}"</p>
+                  <p className="text-xs text-slate-600 italic">"{viewingAstrologer.description || viewingAstrologer.about || ""}"</p>
                   <div className="flex flex-wrap gap-3 text-xs text-slate-700 pt-1">
                     <span>Experience: <strong>{viewingAstrologer.experienceYears} Years</strong></span>
                     <span>•</span>
-                    <span>Fee: <strong className="text-purple-700">₹{viewingAstrologer.consultationFee} / session</strong></span>
+                    <span>Fee: <strong className="text-purple-700">₹{viewingAstrologer.consultationFee ?? viewingAstrologer.pricePerMinute ?? 0} / session</strong></span>
                     <span>•</span>
                     <span>Status: <strong className="capitalize">{viewingAstrologer.availability?.status || "online"}</strong></span>
                   </div>
@@ -661,7 +701,7 @@ export default function ManageAstrologersPage() {
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Biography</h4>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed whitespace-pre-line">
-                  {viewingAstrologer.biography}
+                  {viewingAstrologer.biography || viewingAstrologer.about || "No detailed biography provided."}
                 </div>
               </div>
 
@@ -670,7 +710,7 @@ export default function ManageAstrologersPage() {
                 <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-purple-700">Specializations</h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {(viewingAstrologer.specializations || []).map((spec, i) => (
+                    {getSpecializations(viewingAstrologer).map((spec, i) => (
                       <span key={i} className="text-xs bg-purple-50 text-purple-700 px-2.5 py-1 rounded-lg font-semibold border border-purple-200">
                         {spec}
                       </span>
@@ -681,7 +721,7 @@ export default function ManageAstrologersPage() {
                 <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-700">Languages Spoken</h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {(viewingAstrologer.languages || []).map((lang, i) => (
+                    {getLanguages(viewingAstrologer).map((lang, i) => (
                       <span key={i} className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg font-semibold border border-indigo-200">
                         {lang}
                       </span>

@@ -174,8 +174,8 @@ export default function ReportsPage() {
         item.consultationFee || 0,
         item.availability?.status || "online",
         item.isPublished ? "Published" : "Unpublished",
-        `"${(item.specializations || []).join("; ").replace(/"/g, '""')}"`,
-        `"${(item.languages || []).join("; ").replace(/"/g, '""')}"`,
+        `"${(Array.isArray(item.specializations) ? item.specializations : Array.isArray(item.specialties) ? item.specialties : typeof item.specializations === 'string' ? [item.specializations] : []).join("; ").replace(/"/g, '""')}"`,
+        `"${(Array.isArray(item.languages) ? item.languages : typeof item.languages === 'string' ? [item.languages] : []).join("; ").replace(/"/g, '""')}"`,
         new Date(item.createdAt).toLocaleDateString("en-IN")
       ]);
 
