@@ -114,7 +114,7 @@ export default function NotificationsPage() {
             )}
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Real-time administrative alerts for new VIP Shaadi enquiries and astrologer consultations
+            Real-time administrative alerts for new VIP Familiess enquiries and astrologer consultations
           </p>
         </div>
 
@@ -231,7 +231,7 @@ export default function NotificationsPage() {
 
                     <div className="flex items-center gap-3 text-[11px] text-slate-400">
                       <span className="font-semibold text-slate-600 capitalize">
-                        {item.relatedModel === "VipShaadiEnquiry" ? "VIP Shaadi Enquiry" : item.relatedModel || "System Alert"}
+                        {item.relatedModel === "VipShaadiEnquiry" ? "VIP Familiess Enquiry" : item.relatedModel || "System Alert"}
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-1">

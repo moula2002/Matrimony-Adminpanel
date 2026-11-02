@@ -8,7 +8,8 @@ import {
   BarChart3,
   TrendingUp,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  ArrowDownToLine
 } from "lucide-react";
 import {
   BarChart,
@@ -134,7 +135,7 @@ export default function ReportsPage() {
   const exportToCSV = () => {
     if (reportType === "vip") {
       if (enquiries.length === 0) {
-        alert("No VIP Shaadi enquiry records to export.");
+        alert("No VIP Familiess enquiry records to export.");
         return;
       }
 
@@ -155,7 +156,7 @@ export default function ReportsPage() {
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `VIP_Shaadi_Enquiries_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.setAttribute("download", `VIP_Familiess_Enquiries_Report_${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -204,7 +205,7 @@ export default function ReportsPage() {
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Generate and export comprehensive analytics for VIP Shaadi enquiries and astrologer consultations
+            Generate and export comprehensive analytics for VIP Familiess enquiries and astrologer consultations
           </p>
         </div>
 
@@ -238,7 +239,7 @@ export default function ReportsPage() {
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          VIP Shaadi Enquiries Report
+          VIP Familiess Enquiries Report
         </button>
         <button
           onClick={() => setReportType("astrologers")}
@@ -356,7 +357,7 @@ export default function ReportsPage() {
 
           {/* Visual Breakdown Chart */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-            <h3 className="text-base font-bold text-slate-900 mb-1">VIP Shaadi Enquiry Pipeline Breakdown</h3>
+            <h3 className="text-base font-bold text-slate-900 mb-1">VIP Familiess Enquiry Pipeline Breakdown</h3>
             <p className="text-xs text-slate-500 mb-6">Distribution across enquiry lead lifecycle stages</p>
 
             <div className="h-72">

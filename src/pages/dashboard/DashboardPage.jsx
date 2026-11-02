@@ -25,7 +25,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Dynamic VIP Shaadi & Astrologers metrics calculated from existing APIs
+  // Dynamic VIP Familiess & Astrologers metrics calculated from existing APIs
   const [vipStats, setVipStats] = useState({
     total: 0,
     new: 0,
@@ -111,7 +111,7 @@ export default function DashboardPage() {
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
-          <p className="text-sm text-slate-600">Real-time statistics, VIP Shaadi leads, and Astrologer metrics</p>
+          <p className="text-sm text-slate-600">Real-time statistics, VIP Familiess leads, and Astrologer metrics</p>
         </div>
         <button
           onClick={fetchAllDashboardData}
@@ -230,7 +230,7 @@ export default function DashboardPage() {
           </div>
 
           {/* ========================================================= */}
-          {/* VIP SHAADI ENQUIRIES SUMMARY CARDS SECTION */}
+          {/* VIP FAMILIESS ENQUIRIES SUMMARY CARDS SECTION */}
           {/* ========================================================= */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -239,7 +239,7 @@ export default function DashboardPage() {
                   <Crown className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">VIP Shaadi Enquiries</h2>
+                  <h2 className="text-lg font-bold text-slate-900">VIP Familiess Enquiries</h2>
                   <p className="text-xs text-slate-500">Dynamic summary of personalized matchmaking enquiries</p>
                 </div>
               </div>
@@ -315,7 +315,7 @@ export default function DashboardPage() {
                   Converted
                 </div>
                 <div className="text-3xl font-black text-emerald-900 mt-2">{vipStats.converted}</div>
-                <div className="text-[11px] text-emerald-600/80 mt-1">Enrolled into VIP Shaadi</div>
+                <div className="text-[11px] text-emerald-600/80 mt-1">Enrolled into VIP Familiess</div>
               </Link>
 
               {/* Closed Enquiries */}
@@ -462,7 +462,7 @@ export default function DashboardPage() {
               <div>
                 <h3 className="text-lg font-bold text-purple-600">Welcome to Admin Hub</h3>
                 <p className="mt-3 text-sm text-slate-700 leading-relaxed">
-                  Here you can oversee all core metrics, manage VIP Shaadi enquiries, manage certified astrologers, and review payment logs.
+                  Here you can oversee all core metrics, manage VIP Familiess enquiries, manage certified astrologers, and review payment logs.
                 </p>
                 <p className="mt-3 text-sm text-slate-700 leading-relaxed">
                   Use the left navigation to inspect enquiries, update consultation settings, or generate reports.

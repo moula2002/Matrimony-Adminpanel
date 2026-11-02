@@ -22,6 +22,15 @@ import ManageAstrologersPage from "./pages/astrochat/ManageAstrologersPage";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
 import ReportsPage from "./pages/reports/ReportsPage";
 
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("adminToken");
+  const role = localStorage.getItem("adminRole");
+  if (!token || role !== "admin") {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -32,10 +41,17 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
         {/* Protected Admin Routes */}
-        <Route element={<AdminLayout />}>
+        <Route
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/vip-shaadi" element={<VipShaadiPage />} />
+          <Route path="/vip-familiess" element={<VipShaadiPage />} />
           <Route path="/astrochat" element={<AstroChatPage />} />
           <Route path="/astrologers/add" element={<AddAstrologerPage />} />
           <Route path="/astrochat/add" element={<AddAstrologerPage />} />

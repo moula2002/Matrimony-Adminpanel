@@ -130,7 +130,7 @@ export default function VipShaadiPage() {
         setEnquiries([]);
       }
     } catch (err) {
-      setError(err.message || "Failed to load VIP Shaadi enquiries.");
+      setError(err.message || "Failed to load VIP Familiess enquiries.");
     } finally {
       setLoading(false);
     }
@@ -151,7 +151,7 @@ export default function VipShaadiPage() {
     try {
       const res = await updateVipEnquiryStatus(enquiryId, {
         status,
-        note: `Status updated to ${status} via VIP Shaadi management panel`
+        note: `Status updated to ${status} via VIP Familiess management panel`
       });
 
       if (res && res.success) {
@@ -250,7 +250,7 @@ export default function VipShaadiPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">VIP Shaadi Enquiries</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">VIP Familiess Enquiries</h1>
             <span className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs">
               Exclusive Management
             </span>
@@ -384,7 +384,7 @@ export default function VipShaadiPage() {
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-500">
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
-            <span className="text-sm font-medium">Loading VIP Shaadi enquiries...</span>
+            <span className="text-sm font-medium">Loading VIP Familiess enquiries...</span>
           </div>
         ) : error ? (
           <div className="p-8 text-center">
@@ -403,9 +403,9 @@ export default function VipShaadiPage() {
             <div className="h-16 w-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
               <UserCheck className="h-8 w-8" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">No VIP Shaadi Enquiries Found</h3>
+            <h3 className="text-base font-bold text-slate-900">No VIP Familiess Enquiries Found</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              There are currently no VIP Shaadi enquiries matching your filter or search criteria.
+              There are currently no VIP Familiess enquiries matching your filter or search criteria.
             </p>
           </div>
         ) : (
@@ -615,7 +615,7 @@ export default function VipShaadiPage() {
                   <FileText className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">VIP Shaadi Enquiry Details</h2>
+                  <h2 className="text-lg font-bold text-slate-900">VIP Familiess Enquiry Details</h2>
                   <p className="text-xs text-slate-500 font-mono">Enquiry ID: {selectedEnquiry._id}</p>
                 </div>
               </div>

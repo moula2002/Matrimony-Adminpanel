@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Check, X, FileText, User, UserCheck, ShieldAlert, Award } from "lucide-react";
+import { getImageUrl } from "../../utils/api";
 
 export default function ApprovalsPage() {
   const [users, setUsers] = useState([]);
@@ -8,10 +9,9 @@ export default function ApprovalsPage() {
   const [viewUser, setViewUser] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    if (imagePath.startsWith("http")) return imagePath;
-    return `https://server.familiess.com/media_uploads/${imagePath}`;
+  const handleImageError = (e) => {
+    e.target.onerror = null;
+    e.target.src = "https://ui-avatars.com/api/?name=User&background=f1f5f9&color=64748b";
   };
 
   const fetchApprovals = async () => {
@@ -178,7 +178,12 @@ export default function ApprovalsPage() {
                 <div className="flex-shrink-0 mx-auto md:mx-0">
                   <div className="h-40 w-40 overflow-hidden rounded-full border-4 border-slate-100 shadow-sm bg-slate-200">
                     {viewUser.profile?.photos?.[0] ? (
-                      <img src={getImageUrl(viewUser.profile.photos[0])} alt="Profile" className="h-full w-full object-cover" />
+                      <img
+                        src={getImageUrl(viewUser.profile.photos[0])}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                        onError={handleImageError}
+                      />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-slate-500 text-5xl font-bold">
                         {(viewUser.profile?.name || viewUser.email || "U")[0].toUpperCase()}

@@ -50,17 +50,26 @@ export default function Sidebar() {
 
   // Fetch notification and enquiry badges
   useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) return;
+
+    let isMounted = true;
     const fetchBadges = async () => {
+      const currentToken = localStorage.getItem("adminToken");
+      if (!currentToken || !isMounted) return;
+
       try {
         const [notifRes, vipRes] = await Promise.allSettled([
           fetchAdminNotifications({ read: false, limit: 1 }),
           fetchVipEnquiries({ status: "New", limit: 1 })
         ]);
 
-        if (notifRes.status === "fulfilled" && notifRes.value.success) {
-          setUnreadCount(notifRes.value.unreadCount || 0);
+        if (!isMounted) return;
+
+        if (notifRes.status === "fulfilled" && notifRes.value?.success) {
+          setUnreadCount(notifRes.value.unreadCount ?? notifRes.value.total ?? 0);
         }
-        if (vipRes.status === "fulfilled" && vipRes.value.success) {
+        if (vipRes.status === "fulfilled" && vipRes.value?.success) {
           setNewVipCount(vipRes.value.total || 0);
         }
       } catch (e) {
@@ -69,8 +78,11 @@ export default function Sidebar() {
     };
 
     fetchBadges();
-    const interval = setInterval(fetchBadges, 30000); // 30s poll
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchBadges, 60000); // 60s poll
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [pathname]);
 
   const handleLogout = () => {
@@ -84,7 +96,7 @@ export default function Sidebar() {
   const primaryNavItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "User Management", href: "/users", icon: Users },
-    { name: "VIP Shaadi Enquiries", href: "/vip-shaadi", icon: Crown, badge: newVipCount > 0 ? newVipCount : null },
+    { name: "VIP Familiess Enquiries", href: "/vip-shaadi", icon: Crown, badge: newVipCount > 0 ? newVipCount : null },
     { name: "AstroChat Management", href: "/astrochat", icon: Sparkles },
     { name: "Add Astrologer", href: "/astrologers/add", icon: UserPlus },
     { name: "Manage Astrologers", href: "/astrologers", icon: Star },

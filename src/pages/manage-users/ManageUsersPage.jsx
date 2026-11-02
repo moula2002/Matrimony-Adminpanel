@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from "lucide-react";
+import { getImageUrl } from "../../utils/api";
 
 export default function ManageUsersPage() {
   const [managedUsers, setManagedUsers] = useState([]);
@@ -25,12 +26,6 @@ export default function ManageUsersPage() {
   const [sendResult, setSendResult] = useState({ type: "", text: "" });
 
   const [viewUser, setViewUser] = useState(null);
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    if (imagePath.startsWith("http")) return imagePath;
-    return `https://server.familiess.com/media_uploads/${imagePath}`;
-  };
 
   const fetchManagedUsers = async () => {
     try {

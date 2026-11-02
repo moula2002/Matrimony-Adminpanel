@@ -14,8 +14,7 @@ import {
   PhoneCall
 } from "lucide-react";
 import AddUserModal from "./AddUserModal";
-
-
+import { getImageUrl } from "../../utils/api";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -28,17 +27,6 @@ export default function UsersPage() {
   const [viewUser, setViewUser] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    if (typeof imagePath === 'object' && imagePath !== null) {
-      imagePath = imagePath.url;
-    }
-    if (!imagePath) return null;
-    if (imagePath.startsWith("http")) return imagePath;
-    if (imagePath.startsWith("/media_uploads/")) return `https://server.familiess.com${imagePath}`;
-    return `https://server.familiess.com/media_uploads/${imagePath}`;
-  };
 
   const getProfilePhoto = (user) => {
     const photos = user.profile?.rawPhotos || user.profile?.photos;

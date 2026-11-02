@@ -8,4 +8,18 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  server: {
+    proxy: {
+      '/media_uploads': {
+        target: 'https://server.familiess.com',
+        changeOrigin: true,
+        secure: false
+      },
+      '/uploads': {
+        target: 'https://server.familiess.com',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  }
 })
