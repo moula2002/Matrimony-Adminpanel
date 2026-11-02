@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Lock, Mail, AlertCircle, CheckCircle, Database, Eye, EyeOff } from "lucide-react";
+import { apiFetch } from "../../utils/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://server.familiess.com/api/auth/login", {
+      const res = await apiFetch("/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,20 +141,6 @@ export default function LoginPage() {
               ) : (
                 "Sign In"
               )}
-            </button>
-
-            <button
-              type="button"
-              id="demo-admin-login-btn"
-              onClick={() => {
-                localStorage.setItem("adminToken", "admin-verified-session-token");
-                localStorage.setItem("adminEmail", "admin@familiess.com");
-                localStorage.setItem("adminRole", "admin");
-                navigate("/dashboard");
-              }}
-              className="mt-3 w-full py-2.5 px-4 text-xs font-bold text-slate-700 bg-white/80 hover:bg-white border border-slate-300 rounded-xl transition-all shadow-2xs hover:border-purple-300"
-            >
-              Quick Admin Access (Development / Demo)
             </button>
           </div>
         </form>

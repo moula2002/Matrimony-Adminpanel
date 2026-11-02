@@ -16,7 +16,7 @@ import {
   Clock
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { fetchVipEnquiries, fetchAstrologers } from "../../utils/api";
+import { fetchVipEnquiries, fetchAstrologers, apiFetch, getAuthHeaders } from "../../utils/api";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -46,12 +46,10 @@ export default function DashboardPage() {
     setError("");
 
     try {
-      const token = localStorage.getItem("adminToken");
-
       // Concurrently fetch existing core dashboard, VIP enquiries, and astrologers
       const [coreRes, vipRes, astroRes] = await Promise.allSettled([
-        fetch("https://server.familiess.com/api/admin/dashboard", {
-          headers: { Authorization: `Bearer ${token}` }
+        apiFetch("/admin/dashboard", {
+          headers: getAuthHeaders()
         }).then((res) => {
           if (!res.ok) throw new Error("Failed to load dashboard metrics");
           return res.json();

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { apiFetch, getAuthHeaders, getImageUrl } from "../utils/api";
 
 export default function PendingPaymentsPopup() {
   const [pendingPayments, setPendingPayments] = useState([]);
@@ -9,13 +10,8 @@ export default function PendingPaymentsPopup() {
 
   const fetchPendingPayments = async () => {
     try {
-      const token = localStorage.getItem("adminToken");
-      if (!token) return;
-
-      const res = await fetch("https://server.familiess.com/api/admin/payments/pending", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await apiFetch("/admin/payments/pending", {
+        headers: getAuthHeaders(),
       });
 
       if (!res.ok) return;
@@ -23,8 +19,8 @@ export default function PendingPaymentsPopup() {
       const data = await res.json();
       
       // Fetch users to get their profile names
-      const usersRes = await fetch("https://server.familiess.com/api/admin/users", {
-        headers: { Authorization: `Bearer ${token}` }
+      const usersRes = await apiFetch("/admin/users", {
+        headers: getAuthHeaders()
       });
       let usersMap = {};
       if (usersRes.ok) {
@@ -69,13 +65,9 @@ export default function PendingPaymentsPopup() {
         if (rejectionReason === null) return; // User cancelled the prompt
       }
 
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch(`https://server.familiess.com/api/admin/payments/${id}/verify`, {
+      const res = await apiFetch(`/admin/payments/${id}/verify`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status, rejectionReason })
       });
       if (!res.ok) throw new Error("Failed to update payment");
@@ -145,7 +137,7 @@ export default function PendingPaymentsPopup() {
                         <div>
                           {payment.screenshotUrl ? (
                             <a 
-                              href={payment.screenshotUrl.startsWith('http') ? payment.screenshotUrl : `https://server.familiess.com/media_uploads/${payment.screenshotUrl}`} 
+                              href={getImageUrl(payment.screenshotUrl)} 
                               target="_blank" 
                               rel="noreferrer" 
                               className="text-purple-600 hover:text-purple-700 font-semibold text-xs underline"

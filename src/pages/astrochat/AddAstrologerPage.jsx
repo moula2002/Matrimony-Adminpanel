@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   UserPlus,
   Upload,
-  Image as ImageIcon,
   CheckCircle2,
   AlertCircle,
   Loader2,

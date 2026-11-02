@@ -8,11 +8,7 @@ import {
   BarChart3,
   TrendingUp,
   RefreshCw,
-  Loader2,
-  Users,
-  CheckCircle2,
-  Clock,
-  ArrowDownToLine
+  AlertCircle
 } from "lucide-react";
 import {
   BarChart,
@@ -255,6 +251,13 @@ export default function ReportsPage() {
           Astrologers & Consultation Report
         </button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-semibold flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
