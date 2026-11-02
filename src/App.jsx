@@ -15,6 +15,12 @@ import ImageApprovalsPage from "./pages/image-approvals/ImageApprovalsPage";
 import BioApprovalsPage from "./pages/bio-approvals/BioApprovalsPage";
 import BannerPage from "./pages/banner/BannerPage";
 import ReferralsPage from "./pages/referrals/ReferralsPage";
+import VipShaadiPage from "./pages/vip-shaadi/VipShaadiPage";
+import AstroChatPage from "./pages/astrochat/AstroChatPage";
+import AddAstrologerPage from "./pages/astrochat/AddAstrologerPage";
+import ManageAstrologersPage from "./pages/astrochat/ManageAstrologersPage";
+import NotificationsPage from "./pages/notifications/NotificationsPage";
+import ReportsPage from "./pages/reports/ReportsPage";
 
 function App() {
   return (
@@ -29,6 +35,16 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/vip-shaadi" element={<VipShaadiPage />} />
+          <Route path="/astrochat" element={<AstroChatPage />} />
+          <Route path="/astrologers/add" element={<AddAstrologerPage />} />
+          <Route path="/astrochat/add" element={<AddAstrologerPage />} />
+          <Route path="/astrologers" element={<ManageAstrologersPage />} />
+          <Route path="/astrochat/manage" element={<ManageAstrologersPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+
+          {/* Secondary preserved routes */}
           <Route path="/manage-users" element={<ManageUsersPage />} />
           <Route path="/revenue" element={<RevenuePage />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
